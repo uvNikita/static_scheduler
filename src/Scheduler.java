@@ -40,10 +40,12 @@ public class Scheduler {
             for (Task prevTask : levels.get(currLevel - 1)) {
                 Collection<Task> children = prevTask.getChildren().keySet();
                 for (Task child : children) {
+                    if (child.hasLevel())
+                        continue;
                     boolean all_has = true;
                     // Check every parent has it's tier
                     for (Task parent : child.getParents().keySet()) {
-                        if (!parent.hasLevel())
+                        if (!parent.hasLevel() || parent.level == currLevel)
                         {
                             all_has = false;
                             break;
@@ -66,15 +68,7 @@ public class Scheduler {
         Schedule schedule = new Schedule();
         for (Level level : levels) {
             for (Task task : level) {
-                int startTime = 0;
-                for (Map.Entry<Task, Integer> pair : task.getParents().entrySet()) {
-                    Task parent = pair.getKey();
-                    Integer weight = pair.getValue();
-                    int endTime = schedule.getStartTime(parent) + parent.weight + weight;
-                    if (startTime < endTime) {
-                        startTime = endTime;
-                    }
-                }
+                int startTime = schedule.getMinStartTime(task);
                 Processor pr = schedule.addProcessor();
                 schedule.addTask(pr, task, startTime);
             }
@@ -86,21 +80,60 @@ public class Scheduler {
         Schedule schedule = new Schedule();
         for (Level level : levels) {
             for (Task task : level) {
-                int startTime = 0;
-                for (Map.Entry<Task, Integer> pair : task.getParents().entrySet()) {
-                    Task parent = pair.getKey();
-                    Integer weight = pair.getValue();
-                    int parentEnd = schedule.getStartTime(parent) + parent.weight;
-                    int transStart = schedule.addTransmission(parentEnd, weight);
-                    int endTime = transStart + weight;
-                    if (startTime < endTime) {
-                        startTime = endTime;
-                    }
-                }
                 Processor pr = schedule.addProcessor();
-                schedule.addTask(pr, task, startTime);
+                schedule.assignTask(pr, task);
             }
         }
+        return schedule;
+    }
+
+    public static Schedule makeAdvanced(Levels levels) {
+        Schedule schedule = new Schedule();
+        // assign first level
+        Level firstLevel = levels.get(0);
+        for (Task task : firstLevel) {
+            Processor pr = schedule.addProcessor();
+            schedule.addTask(pr, task, 0);
+        }
+        for (Level level : levels) {
+            // assign not assigned task on prev iteration
+            for (Task task : level) {
+                System.out.println("Task: " + task.id);
+                if (!schedule.assignes.containsKey(task)) {
+//                    Processor pr = schedule.addProcessor();
+//                    schedule.assignTask(pr, task);
+                    Task parent = task.getParents().keySet().iterator().next();
+                    Processor pr = schedule.assignes.get(parent);
+                    schedule.assignTask(pr, task);
+                    System.out.println("task:" + task.id);
+                    System.out.println("proc: " + pr.id);
+                    if (task.id == 5) {
+                        System.out.println(schedule.transmissions);
+                    }
+                }
+            }
+            for (Task task : level) {
+                int maxStartTime = 0;
+                Task selectedChild = null;
+                for (Task child : task.getChildren().keySet()) {
+                    // only next level
+                    if (child.level != task.level + 1)
+                        continue;
+                    if (schedule.assignes.containsKey(child))
+                        continue;
+                    int minStartTime = schedule.getMinStartTime(child);
+                    if (maxStartTime < minStartTime) {
+                        maxStartTime = minStartTime;
+                        selectedChild = child;
+                    }
+                }
+                if (selectedChild == null)
+                    continue;
+                Processor pr = schedule.assignes.get(task);
+                schedule.assignTask(pr, selectedChild);
+            }
+        }
+        System.out.println("Trans: " + schedule.transmissions);
         return schedule;
     }
 }

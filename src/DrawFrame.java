@@ -5,6 +5,7 @@ import com.mxgraph.view.mxGraph;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 public class DrawFrame extends JFrame {
@@ -67,6 +68,7 @@ public class DrawFrame extends JFrame {
                     );
                 }
             }
+            System.out.println(levels.size());
 
             // add edges
             for (Level level : levels) {
@@ -141,8 +143,8 @@ public class DrawFrame extends JFrame {
                 for (Map.Entry<Task, Integer> pair : task.getChildren().entrySet()) {
                     Task child = pair.getKey();
                     Integer weight = pair.getValue();
-                    if (schedule.assignes.get(child) == schedule.assignes.get(task))
-                        continue;
+//                    if (schedule.assignes.get(child) == schedule.assignes.get(task))
+//                        continue;
                     String transLabel = weight.toString();
                     graph.insertEdge(graphParent, null, transLabel, cells[task.id], cells[child.id], transFormat);
                 }

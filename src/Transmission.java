@@ -14,4 +14,12 @@ public class Transmission {
     public int diff(Transmission that) {
         return this.start - that.end();
     }
+
+    @Override
+    public String toString() {
+        return "Transmission{" +
+                "start=" + start +
+                ", length=" + length +
+                '}';
+    }
 }
